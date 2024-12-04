@@ -10,10 +10,9 @@ void PixelsInit();
 void AccInit();
 void ReadAcc(int16_t, int16_t, int16_t);
 void CollectAcc(int16_t[60][3]);
-// void CopyData(int16_t *, int16_t *);
+void CompareData(int16_t[60][3], int16_t[60][3]);
 
-// int16_t AccData[60][3]; // 2D array: 60 rows, 3 columns (X, Y, Z)
-int16_t LockData[60][3]; // Store lock pattern
+int16_t LockData[60][3]; // Store lock pattern, 2D array: 60 rows, 3 columns (X, Y, Z)
 int16_t UnlockData[60][3]; // Store unlock pattern
 
 
@@ -27,11 +26,6 @@ void setup() {
 }
 
 void loop() {
-
-    // todo:
-    // Implement the unlock matching part.
-
-
     // If LB pressed, start recording
     if (((PIND & (1<<PD4)) != 0) & (!LockFlag)){
         CollectAcc(LockData);
@@ -55,27 +49,20 @@ void loop() {
     if ((PINF & (1<<PF6)) != 0){
         CollectAcc(UnlockData);
 
-        // Compare LockData and UnlockData
-        
+        CompareData(LockData, UnlockData);
 
+        if (LockFlag){
+            RedBlink();
+        }
 
-        // GreenBlink();
-        // LockFlag = false;
-
-        // RedBlink();
-
+        if (!LockFlag){
+            GreenBlink();
+        }
     }
 
 
 }
 
-// void CopyData(int16_t *src, int16_t *dest){
-//     for (int i = 0; i < 60; i++){
-//         for (int j = 0; j < 3; j++){
-//             dest[i][j] = src[i][j];
-//         }
-//     }
-// }
 
 // void BlueLoad(){
 //     CircuitPlayground.clearPixels();
@@ -179,4 +166,9 @@ void CollectAcc(int16_t dst[60][3]) {
         delay(50);
 
     }
+}
+
+void CompareData(int16_t LD[60][3], int16_t ULD[60][3]){
+    // todo: Implement the comparison part, change the LockFlag accordingly
+
 }
