@@ -8,10 +8,11 @@ void ButtonInit();
 void RedBlink();
 void PixelsInit();
 void AccInit();
-void ReadAcc();
+void ReadAcc(int16_t, int16_t, int16_t);
 void CollectAcc();
 
 int16_t AccData[60][3]; // 2D array: 60 rows, 3 columns (X, Y, Z)
+bool LockFlag = false;
 
 void setup() {
     PixelsInit();
@@ -20,9 +21,13 @@ void setup() {
 }
 
 void loop() {
-    // CircuitPlayground.clearPixels();
+
+    // todo:
+    // Implement the unlock matching part.
+
+
     // If LB pressed, start recording
-    if ((PIND & (1<<PD4)) != 0){
+    if (((PIND & (1<<PD4)) != 0) & (!LockFlag)){
         CollectAcc();
         for (int i = 0; i < 60; i++) {
             Serial.print("Sample "); Serial.print(i); Serial.print(": ");
@@ -30,15 +35,15 @@ void loop() {
             Serial.print(", Y = "); Serial.print(AccData[i][1]);
             Serial.print(", Z = "); Serial.println(AccData[i][2]);
         }
-        // BlueLoad();
         GreenBlink();
+        LockFlag = true;
     }
 
-    // // If RB pressed, start comparing
-    // if ((PINF & (1<<PF6)) != 0){
-    //     BlueLoad();
-    //     RedBlink();
-    // }
+    // If RB pressed, start comparing
+    if ((PINF & (1<<PF6)) != 0){
+        LockFlag = false;
+        RedBlink();
+    }
 
 
 }
