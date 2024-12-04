@@ -9,9 +9,15 @@ void RedBlink();
 void PixelsInit();
 void AccInit();
 void ReadAcc(int16_t, int16_t, int16_t);
-void CollectAcc();
+void CollectAcc(int16_t[60][3]);
+// void CopyData(int16_t *, int16_t *);
 
-int16_t AccData[60][3]; // 2D array: 60 rows, 3 columns (X, Y, Z)
+// int16_t AccData[60][3]; // 2D array: 60 rows, 3 columns (X, Y, Z)
+int16_t LockData[60][3]; // Store lock pattern
+int16_t UnlockData[60][3]; // Store unlock pattern
+
+
+
 bool LockFlag = false;
 
 void setup() {
@@ -28,12 +34,18 @@ void loop() {
 
     // If LB pressed, start recording
     if (((PIND & (1<<PD4)) != 0) & (!LockFlag)){
-        CollectAcc();
+        CollectAcc(LockData);
+        // for (int i = 0; i < 60; i++) {
+        //     Serial.print("Sample "); Serial.print(i); Serial.print(": ");
+        //     Serial.print("X = "); Serial.print(AccData[i][0]);
+        //     Serial.print(", Y = "); Serial.print(AccData[i][1]);
+        //     Serial.print(", Z = "); Serial.println(AccData[i][2]);
+        // }
         for (int i = 0; i < 60; i++) {
             Serial.print("Sample "); Serial.print(i); Serial.print(": ");
-            Serial.print("X = "); Serial.print(AccData[i][0]);
-            Serial.print(", Y = "); Serial.print(AccData[i][1]);
-            Serial.print(", Z = "); Serial.println(AccData[i][2]);
+            Serial.print("X = "); Serial.print(LockData[i][0]);
+            Serial.print(", Y = "); Serial.print(LockData[i][1]);
+            Serial.print(", Z = "); Serial.println(LockData[i][2]);
         }
         GreenBlink();
         LockFlag = true;
@@ -41,13 +53,29 @@ void loop() {
 
     // If RB pressed, start comparing
     if ((PINF & (1<<PF6)) != 0){
-        LockFlag = false;
-        RedBlink();
+        CollectAcc(UnlockData);
+
+        // Compare LockData and UnlockData
+        
+
+
+        // GreenBlink();
+        // LockFlag = false;
+
+        // RedBlink();
+
     }
 
 
 }
 
+// void CopyData(int16_t *src, int16_t *dest){
+//     for (int i = 0; i < 60; i++){
+//         for (int j = 0; j < 3; j++){
+//             dest[i][j] = src[i][j];
+//         }
+//     }
+// }
 
 // void BlueLoad(){
 //     CircuitPlayground.clearPixels();
@@ -133,16 +161,16 @@ void ReadAcc(int16_t *x, int16_t *y, int16_t *z) {
     *z = (int16_t)(buffer[5] << 8 | buffer[4]);
 }
 
-void CollectAcc() {
+void CollectAcc(int16_t dst[60][3]) {
     for (int i = 0; i < 60; i++) {
         // Read X, Y, Z values
         int16_t x, y, z;
         ReadAcc(&x, &y, &z); // Pass by reference to get the values
 
         // Store values in the buffer
-        AccData[i][0] = x; // X-axis
-        AccData[i][1] = y; // Y-axis
-        AccData[i][2] = z; // Z-axis
+        dst[i][0] = x; // X-axis
+        dst[i][1] = y; // Y-axis
+        dst[i][2] = z; // Z-axis
 
         // Wait for the next sample (50 ms for 20 Hz sampling rate)
 
