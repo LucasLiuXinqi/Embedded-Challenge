@@ -35,6 +35,7 @@ void loop() {
         //     Serial.print(", Y = "); Serial.print(AccData[i][1]);
         //     Serial.print(", Z = "); Serial.println(AccData[i][2]);
         // }
+        Serial.println("-----LOCK DATA COLLECTION----");
         for (int i = 0; i < 60; i++) {
             Serial.print("Sample "); Serial.print(i); Serial.print(": ");
             Serial.print("X = "); Serial.print(LockData[i][0]);
@@ -48,8 +49,15 @@ void loop() {
     // If RB pressed, start comparing
     if ((PINF & (1<<PF6)) != 0){
         CollectAcc(UnlockData);
+        Serial.println("-----UNLOCK DATA COLLECTION----");
+        for (int i = 0; i < 60; i++) {
+            Serial.print("Sample "); Serial.print(i); Serial.print(": ");
+            Serial.print("X = "); Serial.print(UnlockData[i][0]);
+            Serial.print(", Y = "); Serial.print(UnlockData[i][1]);
+            Serial.print(", Z = "); Serial.println(UnlockData[i][2]);
+        }
 
-        CompareData(LockData, UnlockData);
+        LockFlag = CompareData(LockData, UnlockData);
 
         if (LockFlag){
             RedBlink();
@@ -169,29 +177,68 @@ void CollectAcc(int16_t dst[60][3]) {
 }
 
 bool CompareData(int16_t LD[60][3], int16_t ULD[60][3]){
-    // todo: Implement the comparison part, change the LockFlag accordingly
-    // first - compare each value of the unlock data to lock data
-    // second - add the robustness, around 0.01 g in any directions for the start
-    // create a comparison buffer which takes the difference between lock and unlock data,
-    // check if they are within acceptable range
-    int16_t l;
-    bool* LockFlag;
-    int16_t comp[60][3];
+    float tolerance = 1000;  // Robustness threshold
 
-    for(int r = 0; r<60; r++){
-        for(int c = 0; c<3; c++){
-            comp[r][c] = LD[r][c]-ULD[r][c];
-        }
+    int16_t LD_V[60];
+    int16_t ULD_V[60];
+
+    float LD_p[60];
+    float LD_vel = 0.0;
+    float LD_prev_p = 0.0;
+
+    float ULD_p[60];
+    float ULD_vel = 0.0;
+    float ULD_prev_p = 0.0;
+
+    float dt = 0.05;
+
+    //Calculating the magnitude vector
+    for(int r = 0; r < 60; r++){ 
+            LD_V[r] = sqrt(LD[r][0]*LD[r][0] + LD[r][1]*LD[r][1] + LD[r][2]*LD[r][2]);
+    }
+    for(int r = 0; r < 60; r++){ 
+            ULD_V[r] = sqrt(ULD[r][0]*ULD[r][0] + ULD[r][1]*ULD[r][1] + ULD[r][2]*ULD[r][2]);
     }
 
-    for(int r = 0; r<60; r++){
-        for(int c = 0; c<3; c++){
-            if(comp[r][c] > l){
-                return false;
-            }
+    //Printing the magnitude vector
+    Serial.println("-----LOCK DATA VECTOR MAGNITUDE-----");
+    for(int i = 0; i<60; i++){
+        Serial.print("Sample: "); Serial.print(i); Serial.print(", Magnitude: "); Serial.println(LD_V[i]);
+    }
+    Serial.println("-----UNLOCK DATA VECTOR MAGNITUDE-----");
+    for(int i = 0; i<60; i++){
+        Serial.print("Sample: "); Serial.print(i); Serial.print(", Magnitude: "); Serial.println(ULD_V[i]);
+    }
+
+    //Integration
+    for (int r = 0; r < 60; r++) {
+        LD_vel += LD_V[r] * dt;   // Integrate acceleration to get velocity
+        LD_p[r] = LD_prev_p + LD_vel * dt;  // Integrate velocity to get position
+        LD_prev_p = LD_p[r];  // Update previous position
+    }
+    for (int r = 0; r < 60; r++) {
+        ULD_vel += ULD_V[r] * dt;   // Integrate acceleration to get velocity
+        ULD_p[r] = ULD_prev_p + ULD_vel * dt;  // Integrate velocity to get position
+        ULD_prev_p = ULD_p[r];  // Update previous position
+    }
+    
+    //Print positions
+    Serial.println("-----LOCK DATA POSITION-----");
+    for(int i = 0; i<60; i++){
+        Serial.print("Sample: "); Serial.print(i); Serial.print(", Position: "); Serial.println(LD_p[i]);
+    }
+    Serial.println("-----UNLOCK DATA POSITION-----");
+    for(int i = 0; i<60; i++){
+        Serial.print("Sample: "); Serial.print(i); Serial.print(", Position: "); Serial.println(ULD_p[i]);
+    }
+
+    //Comparing
+    for (int r = 0; r < 60; r++) {
+        float diff = abs(LD_V[r] - ULD_V[r]);  // Convert to g units
+        if (diff > tolerance) {
+            return true;  // Data doesn't match within the tolerance
         }
     }
     
-    return true;
-
+    return false;  // Data matches within the tolerance
 }
