@@ -2,6 +2,11 @@
 
 ## Gesture-Based Unlock System
 
+### Contributors
+- [Xinqi Liu](https://github.com/LucasLiuXinqi)
+- [Yipeng Wang](https://github.com/Epon-Wang)
+- [Nazar Vaskiv](https://github.com/LakiForstPro)
+
 ### Project Overview
 This project implements a gesture-based authentication system using an IMU (accelerometer) and a microcontroller. The system allows users to record a hand movement sequence and later replicate it to unlock a resource. This provides a secure and intuitive alternative to traditional authentication methods by leveraging motion-based user input.
 
